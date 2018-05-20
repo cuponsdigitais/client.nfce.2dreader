@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "firebase": "^5.0.3",
+    "qrcode.react": "^0.8.0",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
+    "react-input-mask": "^1.2.2",
+    "react-materialize": "^2.2.1",
+    "react-qr-reader": "^2.1.0",
     "react-scripts": "1.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "set PORT=3006 && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"

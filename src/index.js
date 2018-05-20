@@ -1,8 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import registerServiceWorker from './registerServiceWorker';
+import firebase from 'firebase';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+import registerServiceWorker from './config/registerServiceWorker';
+import './assets/styles.css';
+import config from './config/index'
+
+import Main from './components/Main';
+
+document.title = config.company.name
+
+firebase.initializeApp(config.firebase);
+
+ReactDOM.render(<Main />, document.getElementById('root'));
 registerServiceWorker();
