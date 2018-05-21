@@ -15,12 +15,12 @@ export default class Main extends Component {
     constructor() {
         super()
 
-        this.state = {
+        const INITIAL_STATE = {
             session: {
-                cpfNumber: '', 
-                cpfFull: '', 
-                isValidCpf: false, 
-                isModeRegister: false, 
+                cpfNumber: '',
+                cpfFull: '',
+                isValidCpf: false,
+                isModeRegister: false,
                 isLoadClient: false,
                 isLoadItems: false,
                 isLoadCoupons: false,
@@ -30,31 +30,13 @@ export default class Main extends Component {
                 col: 4,
                 offset: 'm4'
             }
-
         }
+
+        this.state = INITIAL_STATE
     }
 
     componentDidMount() {
         this.database = firebase.database();
-    }
-
-    onChangeText(input, event) {
-        if (input == 'cpf') {
-            console.log(event.target.value)
-            let cpfNumber = event.target.value.replace(".", "").replace(".", "").replace("-", "")
-
-            this.setState({
-                session: {
-                    ...this.state.session, cpfNumber: cpfNumber, cpfFull: event.target.value
-                }
-            })
-        } else if (input == 'nfce') {
-            this.setState({
-                session: {
-                    ...this.state.session, qrCodeNfceReader: event.target.value
-                }
-            })
-        }
     }
 
     isValidCpf(cpf) {
@@ -87,66 +69,93 @@ export default class Main extends Component {
         return false
     }
 
+    firebaseCheckClient() {
+        const { cpfNumber } = this.state.session
+
+        this.database.ref('clients/' + cpfNumber).once('value').then(snapshot => snapshot.val())
+            .then((result) => {
+
+                if (result != null) {
+                    this.setState({
+                        session: {
+                            ...this.state.session, client: result, isModeRegister: false, isLoadClient: true
+                        }, layout: { col: 12, offset: '' }
+                    })
+
+                    // 08737049402
+
+                    let clientItems = this.database.ref().child('items').orderByChild('clientId').equalTo(cpfNumber)
+                    let clientCoupons = this.database.ref().child('coupons').orderByChild('clientId').equalTo(cpfNumber)
+
+                    clientItems.on('value', snapshot => {
+                        console.log(`# # carregando items no firebase # #`)
+                        let snap = [], i = 0
+
+                        snapshot.forEach((s) => { snap[i++] = s.val() });
+
+                        this.setState({
+                            session: {
+                                ...this.state.session, isLoadItems: true
+                            }, items: snap
+                        })
+                    });
+
+                    if (result.coupons > 0) {
+                        clientCoupons.on('value', snapshot => {
+                            console.log(`# # carregando coupons no firebase # #`)
+                            let snap = [], i = 0
+
+                            snapshot.forEach((s) => { snap[i++] = s.val() });
+
+                            this.setState({
+                                session: {
+                                    ...this.state.session, isLoadCoupons: true
+                                }, coupons: snap
+                            })
+                        });
+                    } else this.setState({ coupons: 0 })
+                } else this.setState({
+                    session: {
+                        ...this.state.session, isModeRegister: true
+                    },
+                    layout: { col: 8, offset: 'm2' }
+                })
+            }, (error) => console.log(error))
+    }
+
+    onChangeText(input, event) {
+        if (input == 'cpf') {
+            console.log(event.target.value)
+            let cpfNumber = event.target.value.replace(".", "").replace(".", "").replace("-", "")
+
+            this.setState({
+                session: {
+                    ...this.state.session, cpfNumber: cpfNumber, cpfFull: event.target.value
+                }
+            })
+        } else if (input == 'nfce') {
+            this.setState({
+                session: {
+                    ...this.state.session, qrCodeNfceReader: event.target.value
+                }
+            })
+        }
+    }
+
     onClickNext() {
         const { cpfNumber } = this.state.session
 
         let isValid = this.isValidCpf()
 
         if (isValid) {
-            console.log(`CPF é válido!`)
-
             this.setState({ session: { ...this.state.session, isValidCpf: isValid } })
 
-            this.database.ref('clients/' + cpfNumber).once('value').then(snapshot => snapshot.val())
-                .then((result) => {
-
-                        if (result != null) {
-                            this.setState({ session: {
-                                ...this.state.session, client: result, isModeRegister: false, isLoadClient: true
-                            }, layout: { col: 12, offset: '' }})
-
-                            // 08737049402
-
-                            let clientItems = this.database.ref().child('items').orderByChild('clientId').equalTo(cpfNumber)
-                            let clientCoupons = this.database.ref().child('coupons').orderByChild('clientId').equalTo(cpfNumber)
-
-                            clientItems.on('value', snapshot => {
-                                console.log(`# # carregando items no firebase # #`)
-                                let snap = [], i = 0
-
-                                snapshot.forEach((s) => { snap[i++] = s.val() });
-
-                                this.setState({
-                                    session: {
-                                        ...this.state.session, isLoadItems: true
-                                    }, items: snap
-                                })
-                            });
-
-                            if (result.coupons > 0) {
-                                clientCoupons.on('value', snapshot => {
-                                    console.log(`# # carregando coupons no firebase # #`)
-                                    let snap = [], i = 0
-
-                                    snapshot.forEach((s) => { snap[i++] = s.val() });
-
-                                    this.setState({
-                                        session: {
-                                            ...this.state.session, isLoadCoupons: true
-                                        }, coupons: snap
-                                    })
-                                });
-                            } else this.setState({ coupons: 0 })
-                        } else this.setState({
-                            session: {
-                                ...this.state.session, isModeRegister: true
-                            },
-                            layout: { col: 8, offset: 'm2' }})
-                    }, (error) => console.log(error)
-                )
-        } else console.log(`CPF não é válido!`)
+            this.firebaseCheckClient()
+        } else {
+            this.showToast(`CPF não é válido!`)
+            document.getElementById('searchCpf').focus()
+        } 
     }
-
     onClickRegister(form) {
 
         let newClient = { 
@@ -210,7 +219,41 @@ export default class Main extends Component {
             } else this.showToast('Cupom fiscal inválido!')
         } else this.showToast('Cupom fiscal inválido!')
     }
+    onClickPrintCoupom() {
+        console.log(`# Iniciando processo de Resgate de Cupom`)
 
+        const { cpfNumber, cpfFull, client, qrCodeNfceReader } = this.state.session
+
+        let currentDate = new Date().toISOString()
+
+        let newCoupom = { 
+            clientId: cpfNumber, 
+            created_at: currentDate,
+            updated_at: currentDate
+        }
+
+        let updateClient = {
+            ...client, coupons: (client.coupons + 1)
+        }
+
+        var newCoupomKey = this.database.ref().child('coupons').push().key;
+
+        var updates = {}
+        updates['/coupons/' + newCoupomKey] = newCoupom
+        updates['/clients/' + cpfNumber] = updateClient
+
+        // gravar no firebase
+        this.database.ref().update(updates);
+        this.showToast('Cupom cadastrado com sucesso!')
+
+        this.firebaseCheckClient()
+
+        let params = `client_cpf=${cpfFull}&client_name=${client.name}&client_address=${client.address}&client_district=${client.district}&client_city=${client.city}&client_phone=${client.phone}&coupom_key=${newCoupomKey}`
+
+        let url = `http://${config.company.printServer}/index.php?action=cupom&${params}`
+
+        // fetch(url)
+    }
     onClickCancel() {
         console.log(`Restart Application`)
 
@@ -236,7 +279,6 @@ export default class Main extends Component {
         window.M.toast({ html: message })
     }
 
-
     clientInformation() {
         const { items, session } = this.state
         let totalAccumulated = 0, currentBalance = 0, currentCoupons = 0, totalCoupons = session.client.coupons
@@ -249,9 +291,10 @@ export default class Main extends Component {
         }
 
         return {
-            totalAccumulated,
+            totalAccumulated: totalAccumulated.toFixed(2).replace(".", ","),
             totalCoupons,
-            currentBalance,
+            currentBalance: currentBalance.toFixed(2),
+            currentFormatedBalance: currentBalance.toFixed(2).replace(".", ","),
             currentCoupons
         }
     }
@@ -281,7 +324,8 @@ export default class Main extends Component {
 
                             onChangeText={(text) => this.onChangeText('nfce', text)}
                             onClickRead={() => this.onClickRead()}
-                            onClickCancel={() => this.onClickCancel()} />
+                            onClickCancel={() => this.onClickCancel()}
+                            onClickPrintCoupom={() => this.onClickPrintCoupom()} />
 
                     ) /*03724848404*/}
                 </Col>

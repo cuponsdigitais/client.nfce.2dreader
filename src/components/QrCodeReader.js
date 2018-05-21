@@ -13,10 +13,12 @@ const config = {
 
 const QrCodeReader = ({ 
     clientName, clientInformation, cpfFull, qrCodeNfceReader, 
-    onChangeText, onClickRead, onClickCancel, callbackRead,
+    onChangeText, onClickRead, onClickPrintCoupom, onClickCancel, callbackRead,
 }) => {
 
     console.log(clientInformation)
+
+    const { totalAccumulated, totalCoupons, currentBalance, currentFormatedBalance, currentCoupons } = clientInformation
 
     return (
         <Card title={`Cliente: ${clientName}` + "\n" + `[CPF: ${cpfFull}]`} textClassName='center-align'>
@@ -51,18 +53,23 @@ const QrCodeReader = ({
                 {/* Row 2 > render informacoes */}
                 <ul>
                     <li>
-                        Valor Total Acumulado: R$ {clientInformation.totalAccumulated.toFixed(2).replace(".", ",")}
-                        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Cupons Resgatados: {clientInformation.totalCoupons}
+                        Valor Total Acumulado: R$ {totalAccumulated}
+                        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Cupons Resgatados: {totalCoupons}
                     </li>
                     <li className="divider"></li>
-                    <li>Saldo Acumulado: R$ {clientInformation.currentBalance.toFixed(2).replace(".", ",")} {clientInformation.currentBalance.toFixed(2) > 50 && (<em>({clientInformation.currentCoupons} cupo{clientInformation.currentCoupons == 1 ? 'm' : 'ns'} disponíve{clientInformation.currentCoupons == 1 ? 'l' : 'is'})</em>)}
+                    <li>
+                        Saldo Acumulado: R$ {currentFormatedBalance}&nbsp;
+                        {currentBalance > 50 && (
+                            <em>({currentCoupons} cupo{currentCoupons == 1 ? 'm' : 'ns'} disponíve{currentCoupons == 1 ? 'l' : 'is'})</em>
+                        )}
                     </li>
 
-                    {/* {currentBalance.toFixed(2) > 50 && (
+                    {currentBalance > 50 && (
                         <li>
-                            <button className="btn blue waves-effect waves-light col s12" type="button" onClick={this.onClickResgatarCupom}>Resgatar Cupom</button>
+                            <button className="btn blue waves-effect waves-light col s12" type="button" 
+                                onClick={() => onClickPrintCoupom()}>Resgatar Cupom</button>
                         </li>
-                    )} */}
+                    )}
 
                 </ul>
             </Row>

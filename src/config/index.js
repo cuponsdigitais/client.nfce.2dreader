@@ -3,6 +3,7 @@ const config = {
         name: "Supermercado Confiança",
         cnpj: '41062183000238',
         couponValue: 50,
+        printServer: 'localhost',
     },
     firebase: {
         apiKey: "AIzaSyBibOWN-4EzXUQHS3IxC--WumK4aq_J1os",

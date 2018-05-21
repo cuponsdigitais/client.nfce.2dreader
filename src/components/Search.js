@@ -9,13 +9,13 @@ const Search = ({ onChangeText, onClickNext, cpfFull }) => {
         <Card header={<CardTitle image={logotipo} />} style={{ padding: 10 }}>
             <Row>
                 <label className="active">Digite o número do CPF</label>
-                <InputMask {...this.props} onChange={(text) => onChangeText(text)} value={cpfFull}
+                <InputMask {...this.props} onChange={(text) => onChangeText(text)} value={cpfFull} id="searchCpf"
                     mask="999.999.999-99" autoComplete="off" autoFocus={true} />
             </Row>
 
-            <div>
-                <Button waves='light' className='blue' onClick={() => onClickNext()}> Continuar </Button>
-            </div>
+            <Row>
+                <Button waves='light' className='blue col s12' onClick={() => onClickNext()}> Continuar </Button>
+            </Row>
         </Card>
     )
 }
