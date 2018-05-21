@@ -5,10 +5,14 @@ body {
   background-image: url('./background.jpg');
 }
 
-#root {
+#main {
     height: 100vh;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.button-collapse{
+    color: black
 }

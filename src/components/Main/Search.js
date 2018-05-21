@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, CardTitle, Row, Button } from 'react-materialize'
 import InputMask from 'react-input-mask'
 
-import logotipo from '../assets/logo.jpg'
+import logotipo from '../../assets/logo.jpg'
 
 const Search = ({ onChangeText, onClickNext, cpfFull }) => {
     return (

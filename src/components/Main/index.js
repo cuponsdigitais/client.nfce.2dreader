@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import { Row, Col, Toast } from 'react-materialize'
-import firebase from "firebase";
+import firebase from "firebase"
 import QrReader from 'react-qr-reader'
 import QRCode from 'qrcode.react'
 
-import config from '../config'
+import config from '../../config'
 
 import Search from './Search'
 import Register from './Register'
@@ -276,7 +276,8 @@ export default class Main extends Component {
     }
 
     showToast(message) {
-        window.M.toast({ html: message })
+        // window.M.toast({ html: message })
+        window.Materialize.toast(message, 4000)
     }
 
     clientInformation() {
@@ -303,33 +304,35 @@ export default class Main extends Component {
         const { isValidCpf, isModeRegister, isLoadClient, cpfFull, client, qrCodeNfceReader } = this.state.session
         const { col, offset } = this.state.layout
         return (
-            <Row>
-                <Col s={12} m={col} offset={offset} className='grid-example'>
-                    {!isValidCpf && !isModeRegister && (
-                        <Search cpfFull={cpfFull} 
-                            onChangeText={(text) => this.onChangeText('cpf', text)} 
-                            onClickNext={() => this.onClickNext()} />
-                    )}
+            <div id="main">
+                <Row>
+                    <Col s={12} m={col} offset={offset} className='grid-example'>
+                        {!isValidCpf && !isModeRegister && (
+                            <Search cpfFull={cpfFull}
+                                onChangeText={(text) => this.onChangeText('cpf', text)}
+                                onClickNext={() => this.onClickNext()} />
+                        )}
 
-                    {isValidCpf && isModeRegister && (
-                        <Register cpfFull={cpfFull} 
-                            onClickRegister={(form) => this.onClickRegister(form)}
-                            onClickCancel={() => this.onClickCancel()} />
-                    )}
+                        {isValidCpf && isModeRegister && (
+                            <Register cpfFull={cpfFull}
+                                onClickRegister={(form) => this.onClickRegister(form)}
+                                onClickCancel={() => this.onClickCancel()} />
+                        )}
 
-                    {isValidCpf && !isModeRegister && isLoadClient && (
-                        <QrCodeReader
-                            clientName={client.name} cpfFull={cpfFull} qrCodeNfceReader={qrCodeNfceReader}
-                            clientInformation={this.clientInformation()}
+                        {isValidCpf && !isModeRegister && isLoadClient && (
+                            <QrCodeReader
+                                clientName={client.name} cpfFull={cpfFull} qrCodeNfceReader={qrCodeNfceReader}
+                                clientInformation={this.clientInformation()}
 
-                            onChangeText={(text) => this.onChangeText('nfce', text)}
-                            onClickRead={() => this.onClickRead()}
-                            onClickCancel={() => this.onClickCancel()}
-                            onClickPrintCoupom={() => this.onClickPrintCoupom()} />
+                                onChangeText={(text) => this.onChangeText('nfce', text)}
+                                onClickRead={() => this.onClickRead()}
+                                onClickCancel={() => this.onClickCancel()}
+                                onClickPrintCoupom={() => this.onClickPrintCoupom()} />
 
-                    ) /*03724848404*/}
-                </Col>
-            </Row>
+                        ) /*03724848404*/}
+                    </Col>
+                </Row>
+            </div>
         );
     }
 }

@@ -6,7 +6,8 @@ import registerServiceWorker from './config/registerServiceWorker';
 import './assets/styles.css';
 import config from './config/index'
 
-import Main from './components/Main';
+import Main from './components/Admin/';
+// import Main from './components/Main/';
 
 document.title = config.company.name
 
