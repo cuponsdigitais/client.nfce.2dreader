@@ -1,21 +1,26 @@
 import React, { Component } from 'react'
-import { Row, Col, Toast } from 'react-materialize'
+import { Row, Col, Button, Card, Preloader } from 'react-materialize'
 import firebase from "firebase"
-import QrReader from 'react-qr-reader'
-import QRCode from 'qrcode.react'
 
 import config from '../../config'
+import '../../assets/styles.css'
 
 import Search from './Search'
 import Register from './Register'
 import QrCodeReader from './QrCodeReader'
 
-export default class Main extends Component {
+export default class Basic extends Component {
 
     constructor() {
         super()
 
         const INITIAL_STATE = {
+            preload: {
+                items: false,
+                coupons: false,
+                client: false,
+            },
+            user: {}, items: [],
             session: {
                 cpfNumber: '',
                 cpfFull: '',
@@ -29,17 +34,31 @@ export default class Main extends Component {
             layout: {
                 col: 4,
                 offset: 'm4'
-            }
+            },
+            loading: true,
         }
 
         this.state = INITIAL_STATE
     }
 
-    componentDidMount() {
-        this.database = firebase.database();
+    componentWillMount() {
+        this.setState({ user: this.props.user })
     }
 
-    isValidCpf(cpf) {
+    componentDidMount() {
+        this.database = firebase.database();
+
+        this.database.ref('items/').on('value', snapshot => {
+            console.log(`# # carregando items no firebase # #`)
+            let snap = [], i = 0
+
+            snapshot.forEach((s) => { snap[i++] = s.val() });
+
+            this.setState({ items: snap, loading: false })
+        });
+    }
+
+    isValidCpf(cpf) { // return  true ou false
         const { cpfNumber } = this.state.session
 
         let soma = 0, resto, isValid = true
@@ -71,6 +90,7 @@ export default class Main extends Component {
 
     firebaseCheckClient() {
         const { cpfNumber } = this.state.session
+        const { items, coupons } = this.state
 
         this.database.ref('clients/' + cpfNumber).once('value').then(snapshot => snapshot.val())
             .then((result) => {
@@ -79,41 +99,50 @@ export default class Main extends Component {
                     this.setState({
                         session: {
                             ...this.state.session, client: result, isModeRegister: false, isLoadClient: true
-                        }, layout: { col: 12, offset: '' }
-                    })
+                        }, layout: { col: 12, offset: '' }, loading: true
+                    }) // 08737049402
 
-                    // 08737049402
+                    if (config.app.firebaseMethodLoad === `v2`) { 
+                        let clientItems = this.database.ref().child('items').orderByChild('clientId').equalTo(cpfNumber)
+                        let clientCoupons = this.database.ref().child('coupons').orderByChild('clientId').equalTo(cpfNumber)
 
-                    let clientItems = this.database.ref().child('items').orderByChild('clientId').equalTo(cpfNumber)
-                    let clientCoupons = this.database.ref().child('coupons').orderByChild('clientId').equalTo(cpfNumber)
-
-                    clientItems.on('value', snapshot => {
-                        console.log(`# # carregando items no firebase # #`)
-                        let snap = [], i = 0
-
-                        snapshot.forEach((s) => { snap[i++] = s.val() });
-
-                        this.setState({
-                            session: {
-                                ...this.state.session, isLoadItems: true
-                            }, items: snap
-                        })
-                    });
-
-                    if (result.coupons > 0) {
-                        clientCoupons.on('value', snapshot => {
-                            console.log(`# # carregando coupons no firebase # #`)
+                        clientItems.on('value', snapshot => {
+                            console.log(`# # carregando items no firebase # #`)
                             let snap = [], i = 0
 
-                            snapshot.forEach((s) => { snap[i++] = s.val() });
+                            snapshot.forEach((s) => {
+                                snap[i++] = s.val()
+                            });
 
                             this.setState({
                                 session: {
-                                    ...this.state.session, isLoadCoupons: true
-                                }, coupons: snap
+                                    ...this.state.session, isLoadItems: true
+                                }, items: snap
                             })
                         });
-                    } else this.setState({ coupons: 0 })
+
+                        if (result.coupons > 0) {
+                            clientCoupons.on('value', snapshot => {
+                                console.log(`# # carregando coupons no firebase # #`)
+
+                                let snap = [], i = 0
+
+                                snapshot.forEach((s) => {
+                                    snap[i++] = {
+                                        value: s.val(),
+                                        key: s.key
+                                    }
+                                });
+
+                                console.log(snap)
+                                this.setState({
+                                    session: {
+                                        ...this.state.session, isLoadCoupons: true
+                                    }, coupons: snap, loading: false
+                                })
+                            });
+                        } else this.setState({ coupons: 0, loading: false })
+                    } else this.setState({ loading: false })
                 } else this.setState({
                     session: {
                         ...this.state.session, isModeRegister: true
@@ -125,7 +154,6 @@ export default class Main extends Component {
 
     onChangeText(input, event) {
         if (input == 'cpf') {
-            console.log(event.target.value)
             let cpfNumber = event.target.value.replace(".", "").replace(".", "").replace("-", "")
 
             this.setState({
@@ -142,7 +170,7 @@ export default class Main extends Component {
         }
     }
 
-    onClickNext() {
+    onClickNext() { //void
         const { cpfNumber } = this.state.session
 
         let isValid = this.isValidCpf()
@@ -154,9 +182,10 @@ export default class Main extends Component {
         } else {
             this.showToast(`CPF não é válido!`)
             document.getElementById('searchCpf').focus()
-        } 
+        }
     }
     onClickRegister(form) {
+        console.log(form)
 
         let newClient = { 
             id: this.state.session.cpfNumber,
@@ -176,6 +205,8 @@ export default class Main extends Component {
                 ...this.state.session, isModeRegister: false, qrCodeNfceText: ''
             },
         })
+
+        this.firebaseCheckClient()
     }
     onClickRead() {
 
@@ -252,7 +283,7 @@ export default class Main extends Component {
 
         let url = `http://${config.company.printServer}/index.php?action=cupom&${params}`
 
-        // fetch(url)
+        fetch(url)
     }
     onClickCancel() {
         console.log(`Restart Application`)
@@ -284,12 +315,14 @@ export default class Main extends Component {
         const { items, session } = this.state
         let totalAccumulated = 0, currentBalance = 0, currentCoupons = 0, totalCoupons = session.client.coupons
 
-        if (items) {
-            for (let item of items) totalAccumulated = totalAccumulated + item.value
+        if (config.app.firebaseMethodLoad === `v2`) {
+            if (items) {
+                for (let item of items) totalAccumulated = totalAccumulated + item.value
+            }
+        } else for (let i of items) if (i.clientId === session.cpfNumber) totalAccumulated = totalAccumulated + i.value
 
-            currentBalance = totalAccumulated - (totalCoupons * config.company.couponValue)
-            currentCoupons = Math.floor(currentBalance / config.company.couponValue)
-        }
+        currentBalance = totalAccumulated - (totalCoupons * config.company.couponValue)
+        currentCoupons = Math.floor(currentBalance / config.company.couponValue)
 
         return {
             totalAccumulated: totalAccumulated.toFixed(2).replace(".", ","),
@@ -304,8 +337,14 @@ export default class Main extends Component {
         const { isValidCpf, isModeRegister, isLoadClient, cpfFull, client, qrCodeNfceReader } = this.state.session
         const { col, offset } = this.state.layout
         return (
-            <div id="main">
-                <Row>
+            <Row>
+                {this.state.loading && (
+                    <Card style={{ textAlign: 'center' }}>
+                        <Preloader flashing />
+                    </Card>
+                )}
+
+                {!this.state.loading && (
                     <Col s={12} m={col} offset={offset} className='grid-example'>
                         {!isValidCpf && !isModeRegister && (
                             <Search cpfFull={cpfFull}
@@ -331,8 +370,16 @@ export default class Main extends Component {
 
                         ) /*03724848404*/}
                     </Col>
-                </Row>
-            </div>
+                )}
+
+                <Button floating fab='vertical' icon='menu' className={config.app.primaryColor} large style={{ bottom: '45px', right: '24px' }}>
+                    {this.state.user.access.admin.dashboard.read && (
+                        <Button floating icon='dashboard' className='blue' />
+                    )}
+                    
+                    <Button floating icon='exit_to_app' className='red' onClick={() => this.props.logout()} />
+                </Button>
+            </Row>
         );
     }
 }

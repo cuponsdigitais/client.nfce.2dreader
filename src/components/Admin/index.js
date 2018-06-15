@@ -14,9 +14,13 @@ export default class Admin extends Component {
 
         const INITIAL_STATE = {
             session: {
-                token: null,
+                token: 123,
                 username: '',
                 email: '',
+            },
+            charts: {
+                pieChart: null,
+                barChart: null,
             }
         }
 
@@ -32,11 +36,47 @@ export default class Admin extends Component {
         window.Materialize.toast(message, 4000)
     }
 
+
+    buildPieChart = () => {
+        return {
+            title: 'GRAFICO PIZZA',
+            data: {
+                labels: ['Red', 'Green', 'Yellow'],
+                datasets: [{
+                    data: [300, 50, 100],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                }]
+            }
+        }
+    }
+
+    buildHorizontalBarChart = () => {
+        return {
+            title: 'GRAFICO HORIZONTAL BAR',
+            data: {
+                labels: ['Red', 'Green', 'Yellow'],
+                datasets: [{
+                    data: [300, 50, 100],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                }]
+            }
+        }
+    }
+
+    buildChart = () => {
+        return {
+            pieChart: this.buildPieChart(),
+            horizontalBarChart: this.buildHorizontalBarChart(),
+        }
+    }
+
     render() {
         return (
             <div id="admin">
                 {this.state.session.token != null && (
-                    <Scene1 logotipo={logotipo} />
+                    <Scene1 logotipo={logotipo} chartsData={this.buildChart()} />
                 )}
             </div>
         )

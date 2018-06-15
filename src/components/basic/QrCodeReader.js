@@ -2,14 +2,7 @@ import React from 'react'
 import { Card, Row, Col, Button, Input } from 'react-materialize'
 import QRCode from 'qrcode.react'
 
-const config = {
-    size: '192',
-    fgColor: '#000000',
-    bgColor: '#ffffff',
-    level: 'L',
-    renderAs: 'svg',
-    result: 'Aguardando leitura do cupom',
-}
+import config from '../../config/'
 
 const QrCodeReader = ({ 
     clientName, clientInformation, cpfFull, qrCodeNfceReader, 
@@ -25,12 +18,12 @@ const QrCodeReader = ({
             <Row>
                 <Col m={6} className='grid-example'>
                     {qrCodeNfceReader != '' && (
-                        <QRCode value={qrCodeNfceReader} size={config.qrcode_size}
-                            fgColor={config.qrcode_fgColor} bgColor={config.qrcode_bgColor}
-                            level={config.qrcode_level} renderAs={config.qrcode_renderAs} />
+                        <QRCode value={qrCodeNfceReader} size={config.app.qrCodeReader.qrcode_size}
+                            fgColor={config.app.qrCodeReader.qrcode_fgColor} bgColor={config.app.qrCodeReader.qrcode_bgColor}
+                            level={config.app.qrCodeReader.qrcode_level} renderAs={config.app.qrCodeReader.qrcode_renderAs} />
                     )}
 
-                    {qrCodeNfceReader == '' && (<p>{config.result}</p>)}
+                    {qrCodeNfceReader == '' && (<p>{config.app.qrCodeReader.result}</p>)}
                 </Col>
 
                 <Col m={6} className='grid-example'>
@@ -39,12 +32,12 @@ const QrCodeReader = ({
                             onChange={(text) => onChangeText(text)} 
                             label="Cupom NFCe" autoFocus={true} />
 
-                        <Button waves='light' className='blue'
+                        <Button waves='light' className={config.app.primaryColor + ' col s12'}
                             onClick={() => {
                                 onClickRead()
                                 document.getElementById('qrCode').focus()
                             } }> Verificar Cupom </Button>
-                        <Button waves='light' className='red'
+                        <Button waves='light' className={config.app.cancelColor + ' col s12'}
                             onClick={() => onClickCancel()}> Digitar novo CPF </Button>
                     </Row>
                 </Col>
@@ -66,7 +59,7 @@ const QrCodeReader = ({
 
                     {currentBalance > 50 && (
                         <li>
-                            <button className="btn blue waves-effect waves-light col s12" type="button" 
+                            <button className={config.app.primaryColor + ' btn waves-effect waves-light col s12'} type="button" 
                                 onClick={() => onClickPrintCoupom()}>Resgatar Cupom</button>
                         </li>
                     )}

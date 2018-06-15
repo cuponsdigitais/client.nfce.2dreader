@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card, CardTitle, Row, Button } from 'react-materialize'
 import InputMask from 'react-input-mask'
+import config from '../../config/'
 
 import logotipo from '../../assets/logo.jpg'
 
@@ -14,7 +15,7 @@ const Search = ({ onChangeText, onClickNext, cpfFull }) => {
             </Row>
 
             <Row>
-                <Button waves='light' className='blue col s12' onClick={() => onClickNext()}> Continuar </Button>
+                <Button waves='light' className={config.app.primaryColor + ' col s12'} onClick={() => onClickNext()}> Continuar </Button>
             </Row>
         </Card>
     )
