@@ -1,7 +1,11 @@
 import React, { Component } from 'react';
 // import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import { Card, Preloader } from 'react-materialize'
-import firebase from 'firebase'
+
+import firebase from "firebase/app"
+import 'firebase/auth'
+import 'firebase/database'
+
 import moment from 'moment'
 
 import Login from './Login'
@@ -99,22 +103,7 @@ class Main extends Component {
                     })
             })
             .catch(function (error) {
-                var errorCode = error.code;
-                var errorMessage = error.message;
-
                 console.log(error)
-
-                let e = { email: '', password: '' }
-
-                if (errorCode === 'auth/invalid-email') e = { ...e, email: 'email invalido' }
-                else if (errorCode === 'auth/user-disabled') this.showToast('usuario desabilitado')
-                else if (errorCode === 'auth/user-not-found') e = { ...e, email: 'Usuario nao localizado' }
-                else if (errorCode === 'auth/wrong-password') e = { ...e, password: 'Senha incorreta' }
-                else {
-                    console.log(errorMessage);
-                }
-
-                // this.setState({ loginError: e })
             });
 
 

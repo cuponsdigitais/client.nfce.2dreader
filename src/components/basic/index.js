@@ -1,6 +1,9 @@
 import React, { Component } from 'react'
 import { Row, Col, Button, Card, Preloader } from 'react-materialize'
-import firebase from "firebase"
+import firebase from "firebase/app"
+import 'firebase/database'
+
+import axios from 'axios'
 
 import '../../assets/styles.css'
 
@@ -94,7 +97,6 @@ export default class Basic extends Component {
 
     firebaseCheckClient() {
         const { cpfNumber } = this.state.session
-        const { items, coupons } = this.state
 
         this.database.ref('clients/' + cpfNumber).once('value').then(snapshot => snapshot.val())
             .then((result) => {
@@ -157,7 +159,7 @@ export default class Basic extends Component {
     }
 
     onChangeText(input, event) {
-        if (input == 'cpf') {
+        if (input === 'cpf') {
             let cpfNumber = event.target.value.replace(".", "").replace(".", "").replace("-", "")
 
             this.setState({
@@ -165,7 +167,7 @@ export default class Basic extends Component {
                     ...this.state.session, cpfNumber: cpfNumber, cpfFull: event.target.value
                 }
             })
-        } else if (input == 'nfce') {
+        } else if (input === 'nfce') {
             this.setState({
                 session: {
                     ...this.state.session, qrCodeNfceReader: event.target.value
@@ -175,8 +177,6 @@ export default class Basic extends Component {
     }
 
     onClickNext() { //void
-        const { cpfNumber } = this.state.session
-
         let isValid = this.isValidCpf()
 
         if (isValid) {
@@ -218,7 +218,7 @@ export default class Basic extends Component {
 
         const { qrCodeNfceReader, cpfNumber } = this.state.session
 
-        let params = [], isItem = false, url = qrCodeNfceReader ? qrCodeNfceReader.split("/") : ''
+        let params = [], url = qrCodeNfceReader ? qrCodeNfceReader.split("/") : ''
 
         if (url !== '' && url.length > 3) {
             let url_formatada = url[4] ? url[4].split("&") : ''
@@ -282,7 +282,7 @@ export default class Basic extends Component {
     onClickPrintCoupom() {
         console.log(`# Iniciando processo de Resgate de Cupom`)
 
-        const { cpfNumber, cpfFull, client, qrCodeNfceReader } = this.state.session
+        const { cpfNumber, cpfFull, client } = this.state.session
 
         let currentDate = new Date().toISOString()
 
@@ -315,6 +315,45 @@ export default class Basic extends Component {
 
         fetch(url)
     }
+    onClickRePrintCoupon(item) {
+        console.log(item)
+        
+        let currentDate = new Date().toISOString()
+
+        let currentCoupons = Math.floor(item.value / this.props.config.company.couponValue)
+
+        console.log(`## value: ${item.value}`)
+        console.log(`## print: ${currentCoupons}`)
+
+        let newRePrint = {
+            clientId: this.state.session.cpfNumber,
+            nfce: {
+                key: item.key,
+                value: item.value,
+                coupons: currentCoupons
+            },
+            createdAt: currentDate,
+            justify: item.justify,
+            user: this.state.user.uuid
+        }
+
+        // gravar no firebase
+        this.database.ref().child("re-print").push(newRePrint)
+
+        // start re-print
+        let time = 0
+        for (let i = 0; i < currentCoupons; i++) {
+            let newTime = time
+            setTimeout(() => {
+                this.onClickPrintCoupom()
+
+                console.log(`#### time ${newTime} print ${i + 1}/${currentCoupons}`)
+                this.showToast(`Imprimindo ${i + 1}/${currentCoupons} cupons de sorteio!`)
+            }, newTime);
+
+            time = time + 3500
+        }
+    }
     onClickCancel() {
         console.log(`Restart Application`)
 
@@ -336,6 +375,16 @@ export default class Basic extends Component {
         })
     }
 
+    onSearchSefaz() {
+        const { qrCodeNfceReader } = this.state.session
+
+        console.log('# # start buscar na sefaz', qrCodeNfceReader)
+
+        let url = `https://www.sefaz.rs.gov.br/ASP/AAE_ROOT/NFE/SAT-WEB-NFE-COM_2.asp?HML=false&chaveNFe=${qrCodeNfceReader}`
+
+        window.open(url)
+    }
+
     showToast(message) {
         // window.M.toast({ html: message })
         window.Materialize.toast(message, 4000)
@@ -343,25 +392,46 @@ export default class Basic extends Component {
 
     clientInformation() {
         const { items, session } = this.state
-        let totalAccumulated = 0, currentBalance = 0, currentCoupons = 0, totalCoupons = session.client.coupons
 
         if (this.props.config.app.accumulated) {
+            let totalAccumulated = 0, currentBalance = 0, currentCoupons = 0, totalCoupons = session.client.coupons
+
             if (this.props.config.app.firebaseMethodLoad === `v2`) {
                 if (items) {
                     for (let item of items) totalAccumulated = totalAccumulated + item.value
                 }
             } else for (let i of items) if (i.clientId === session.cpfNumber) totalAccumulated = totalAccumulated + i.value
-        }
 
-        currentBalance = totalAccumulated - (totalCoupons * this.props.config.company.couponValue)
-        currentCoupons = Math.floor(currentBalance / this.props.config.company.couponValue)
+            currentBalance = totalAccumulated - (totalCoupons * this.props.config.company.couponValue)
+            currentCoupons = Math.floor(currentBalance / this.props.config.company.couponValue)
 
-        return {
-            totalAccumulated: totalAccumulated.toFixed(2).replace(".", ","),
-            totalCoupons,
-            currentBalance: currentBalance.toFixed(2),
-            currentFormatedBalance: currentBalance.toFixed(2).replace(".", ","),
-            currentCoupons
+            return {
+                totalAccumulated: totalAccumulated.toFixed(2).replace(".", ","),
+                totalCoupons,
+                currentBalance: currentBalance.toFixed(2),
+                currentFormatedBalance: currentBalance.toFixed(2).replace(".", ","),
+                currentCoupons
+            }
+        } else {
+            let temp = [], total = 0, count = 0, showInfo = false
+
+            for (let i of items) {
+                if (session.cpfNumber === '08761042439') {
+                    count++
+                    showInfo = true
+                    total = total + i.value
+                } 
+
+                if (i.clientId === session.cpfNumber) temp.push(i)
+            }
+
+            return {
+                showInfo,
+                items: temp,
+                count,
+                currentBalance: total.toFixed(2),
+                currentFormatedBalance: total.toFixed(2).replace(".", ","),
+            }
         }
     }
 
@@ -396,9 +466,11 @@ export default class Basic extends Component {
                                 clientInformation={this.clientInformation()}
 
                                 onChangeText={(text) => this.onChangeText('nfce', text)}
+                                onSearchSefaz={() => this.onSearchSefaz()}
                                 onClickRead={() => this.onClickRead()}
                                 onClickCancel={() => this.onClickCancel()}
-                                onClickPrintCoupom={() => this.onClickPrintCoupom()} />
+                                onClickPrintCoupom={() => this.onClickPrintCoupom()} 
+                                onRePrintCoupon={(item) => this.onClickRePrintCoupon(item)} />
 
                         ) /*03724848404*/}
                     </Col>
@@ -415,15 +487,3 @@ export default class Basic extends Component {
         );
     }
 }
-
-
-// <br />
-//     <b>Warning</b>: file_put_contents(COM3): failed to open stream: Permission denied in <b>C:\xampp\htdocs\vendor\mike42\escpos-php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php</b> on line < b > 384</b > <br />
-//         <br />
-//         <b>Fatal error</b>: Uncaught exception 'Exception' with message 'Failed to write file to printer at COM3' in C: \xampp\htdocs\vendor\mike42\escpos - php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php: 297
-// Stack trace:
-// #0 C: \xampp\htdocs\vendor\mike42\escpos - php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php(173): Mike42\Escpos\PrintConnectors\WindowsPrintConnector -& gt; finalizeWin('\e@\e!U\eE\x01ATACARE...')
-// #1 C: \xampp\htdocs\vendor\mike42\escpos - php\src\Mike42\Escpos\Printer.php(511): Mike42\Escpos\PrintConnectors\WindowsPrintConnector -& gt; finalize()
-// #2 C: \xampp\htdocs\index.php(128): Mike42\Escpos\Printer -& gt; close()
-// #3 { main }
-// thrown in <b>C:\xampp\htdocs\vendor\mike42\escpos-php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php</b> on line < b > 297</b > <br />

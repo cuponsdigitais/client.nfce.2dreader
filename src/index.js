@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import * as firebase from 'firebase'
+
+import firebase from 'firebase/app'
 
 import registerServiceWorker from './config/registerServiceWorker';
 import config from './config/index'
