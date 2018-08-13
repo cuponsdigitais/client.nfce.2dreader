@@ -1,12 +1,9 @@
 import React from 'react'
 import { Row, Col, Card, CardTitle, Input, Button } from 'react-materialize'
 
-import config from '../config'
-
-import logotipo from '../assets/logo.jpg'
 import '../assets/styles.css'
 
-const Login = ({ login, callback }) => {
+const Login = ({ login, callback, config }) => {
     let form = {
         email: '', password: ''
     }
@@ -28,7 +25,7 @@ const Login = ({ login, callback }) => {
     return (
         <Row>
             <Col m={4} offset="m4">
-                <Card header={<CardTitle image={logotipo} />} style={{ textAlign: 'center', marginTop: 100, padding: 10, }}>
+                <Card header={<CardTitle image={config.company.logotipo} />} style={{ textAlign: 'center', marginTop: 100, padding: 10, minWidth: 300 }}>
 
                     <Row>
                         <Input s={12} label="E-mail" name="email" onChange={(text) => _handlerChange(text)} error={callback.email} />

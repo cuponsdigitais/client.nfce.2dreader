@@ -1,13 +1,10 @@
 import React from 'react'
 import { Card, CardTitle, Row, Button } from 'react-materialize'
 import InputMask from 'react-input-mask'
-import config from '../../config/'
 
-import logotipo from '../../assets/logo.jpg'
-
-const Search = ({ onChangeText, onClickNext, cpfFull }) => {
+const Search = ({ onChangeText, onClickNext, cpfFull, config }) => {
     return (
-        <Card header={<CardTitle image={logotipo} />} style={{ padding: 10 }}>
+        <Card header={<CardTitle image={config.company.logotipo} />} style={{ padding: 10, minWidth: 300 }}>
             <Row>
                 <label className="active">Digite o número do CPF</label>
                 <InputMask {...this.props} onChange={(text) => onChangeText(text)} value={cpfFull} id="searchCpf"

@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { Row, Col, Button, Card, Preloader } from 'react-materialize'
 import firebase from "firebase"
 
-import config from '../../config'
 import '../../assets/styles.css'
 
 import Search from './Search'
@@ -29,7 +28,12 @@ export default class Basic extends Component {
                 isLoadClient: false,
                 isLoadItems: false,
                 isLoadCoupons: false,
-                qrCodeNfceReader: ''
+                qrCodeNfceReader: '',
+                spoolPrint: 0,
+                nfce: {
+                    key: '',
+                    value: 0,
+                }
             },
             layout: {
                 col: 4,
@@ -102,7 +106,7 @@ export default class Basic extends Component {
                         }, layout: { col: 12, offset: '' }, loading: true
                     }) // 08737049402
 
-                    if (config.app.firebaseMethodLoad === `v2`) { 
+                    if (this.props.config.app.firebaseMethodLoad === `v2`) { 
                         let clientItems = this.database.ref().child('items').orderByChild('clientId').equalTo(cpfNumber)
                         let clientCoupons = this.database.ref().child('coupons').orderByChild('clientId').equalTo(cpfNumber)
 
@@ -210,6 +214,8 @@ export default class Basic extends Component {
     }
     onClickRead() {
 
+        this.setState({ loading: true })
+
         const { qrCodeNfceReader, cpfNumber } = this.state.session
 
         let params = [], isItem = false, url = qrCodeNfceReader ? qrCodeNfceReader.split("/") : ''
@@ -220,16 +226,18 @@ export default class Basic extends Component {
             if (url_formatada.length > 1) {
                 for (let i of url_formatada) { let x = i.split("="); params[x[0]] = x[1] }
 
-                if (params['consultarNFCe?chNFe'].includes(config.company.cnpj)) {
+                if (params['consultarNFCe?chNFe'].includes(this.props.config.company.cnpj)) {
                     this.database.ref().child('items').orderByChild('key').equalTo(params['consultarNFCe?chNFe']).once('value')
                         .then(snapshot => snapshot.val()).then((result) => {
                             if (result == null) {
                                 let currentDate = new Date().toISOString()
 
+                                let currentValue = parseFloat(params['vNF'])
+
                                 let newItem = {
                                     clientId: cpfNumber,
                                     key: params['consultarNFCe?chNFe'],
-                                    value: parseFloat(params['vNF']),
+                                    value: currentValue,
                                     createdAt: currentDate,
                                     updatedAt: currentDate
                                 }
@@ -237,7 +245,26 @@ export default class Basic extends Component {
                                 // gravar no firebase
                                 this.database.ref().child("items").push(newItem)
 
-                                this.showToast('Cupom cadastrado com sucesso!')
+                                if (!this.props.config.app.accumulated) {
+                                    let currentCoupons = Math.floor(currentValue / this.props.config.company.couponValue)
+
+                                    console.log(`## value: ${currentValue}`)
+                                    console.log(`## print: ${currentCoupons}`)
+
+                                    let time = 0
+
+                                    for (let i = 0; i < currentCoupons; i++) {
+                                        let newTime = time
+                                        setTimeout(() => {
+                                            this.onClickPrintCoupom()
+                                            
+                                            console.log(`#### time ${newTime} print ${i + 1}/${currentCoupons}`)
+                                            this.showToast(`Imprimindo ${i + 1}/${currentCoupons} cupons de sorteio!`)
+                                        }, newTime);
+
+                                        time = time + 3500
+                                    }
+                                } else this.showToast(`Cupom cadastrado com sucesso!`)
                             } else this.showToast('Cupom já cadastrado!')
                         }, (error) => console.log(error))
                     
@@ -249,6 +276,8 @@ export default class Basic extends Component {
                 }
             } else this.showToast('Cupom fiscal inválido!')
         } else this.showToast('Cupom fiscal inválido!')
+
+        this.setState({ loading: false })
     }
     onClickPrintCoupom() {
         console.log(`# Iniciando processo de Resgate de Cupom`)
@@ -275,13 +304,14 @@ export default class Basic extends Component {
 
         // gravar no firebase
         this.database.ref().update(updates);
-        this.showToast('Cupom cadastrado com sucesso!')
+        
+        if (this.props.config.app.accumulated) this.showToast('Imprimindo cupom de sorteio...')
 
         this.firebaseCheckClient()
 
         let params = `client_cpf=${cpfFull}&client_name=${client.name}&client_address=${client.address}&client_district=${client.district}&client_city=${client.city}&client_phone=${client.phone}&coupom_key=${newCoupomKey}`
 
-        let url = `http://${config.company.printServer}/index.php?action=cupom&${params}`
+        let url = `http://${this.props.config.company.printServer}/index.php?action=cupom&${params}`
 
         fetch(url)
     }
@@ -315,14 +345,16 @@ export default class Basic extends Component {
         const { items, session } = this.state
         let totalAccumulated = 0, currentBalance = 0, currentCoupons = 0, totalCoupons = session.client.coupons
 
-        if (config.app.firebaseMethodLoad === `v2`) {
-            if (items) {
-                for (let item of items) totalAccumulated = totalAccumulated + item.value
-            }
-        } else for (let i of items) if (i.clientId === session.cpfNumber) totalAccumulated = totalAccumulated + i.value
+        if (this.props.config.app.accumulated) {
+            if (this.props.config.app.firebaseMethodLoad === `v2`) {
+                if (items) {
+                    for (let item of items) totalAccumulated = totalAccumulated + item.value
+                }
+            } else for (let i of items) if (i.clientId === session.cpfNumber) totalAccumulated = totalAccumulated + i.value
+        }
 
-        currentBalance = totalAccumulated - (totalCoupons * config.company.couponValue)
-        currentCoupons = Math.floor(currentBalance / config.company.couponValue)
+        currentBalance = totalAccumulated - (totalCoupons * this.props.config.company.couponValue)
+        currentCoupons = Math.floor(currentBalance / this.props.config.company.couponValue)
 
         return {
             totalAccumulated: totalAccumulated.toFixed(2).replace(".", ","),
@@ -347,19 +379,19 @@ export default class Basic extends Component {
                 {!this.state.loading && (
                     <Col s={12} m={col} offset={offset} className='grid-example'>
                         {!isValidCpf && !isModeRegister && (
-                            <Search cpfFull={cpfFull}
+                            <Search config={this.props.config} cpfFull={cpfFull}
                                 onChangeText={(text) => this.onChangeText('cpf', text)}
                                 onClickNext={() => this.onClickNext()} />
                         )}
 
                         {isValidCpf && isModeRegister && (
-                            <Register cpfFull={cpfFull}
+                            <Register config={this.props.config} cpfFull={cpfFull}
                                 onClickRegister={(form) => this.onClickRegister(form)}
                                 onClickCancel={() => this.onClickCancel()} />
                         )}
 
                         {isValidCpf && !isModeRegister && isLoadClient && (
-                            <QrCodeReader
+                            <QrCodeReader config={this.props.config} 
                                 clientName={client.name} cpfFull={cpfFull} qrCodeNfceReader={qrCodeNfceReader}
                                 clientInformation={this.clientInformation()}
 
@@ -372,7 +404,7 @@ export default class Basic extends Component {
                     </Col>
                 )}
 
-                <Button floating fab='vertical' icon='menu' className={config.app.primaryColor} large style={{ bottom: '45px', right: '24px' }}>
+                <Button floating fab='vertical' icon='menu' className={this.props.config.app.primaryColor} large style={{ bottom: '45px', right: '24px' }}>
                     {this.state.user.access.admin.dashboard.read && (
                         <Button floating icon='dashboard' className='blue' />
                     )}
@@ -383,3 +415,15 @@ export default class Basic extends Component {
         );
     }
 }
+
+
+// <br />
+//     <b>Warning</b>: file_put_contents(COM3): failed to open stream: Permission denied in <b>C:\xampp\htdocs\vendor\mike42\escpos-php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php</b> on line < b > 384</b > <br />
+//         <br />
+//         <b>Fatal error</b>: Uncaught exception 'Exception' with message 'Failed to write file to printer at COM3' in C: \xampp\htdocs\vendor\mike42\escpos - php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php: 297
+// Stack trace:
+// #0 C: \xampp\htdocs\vendor\mike42\escpos - php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php(173): Mike42\Escpos\PrintConnectors\WindowsPrintConnector -& gt; finalizeWin('\e@\e!U\eE\x01ATACARE...')
+// #1 C: \xampp\htdocs\vendor\mike42\escpos - php\src\Mike42\Escpos\Printer.php(511): Mike42\Escpos\PrintConnectors\WindowsPrintConnector -& gt; finalize()
+// #2 C: \xampp\htdocs\index.php(128): Mike42\Escpos\Printer -& gt; close()
+// #3 { main }
+// thrown in <b>C:\xampp\htdocs\vendor\mike42\escpos-php\src\Mike42\Escpos\PrintConnectors\WindowsPrintConnector.php</b> on line < b > 297</b > <br />

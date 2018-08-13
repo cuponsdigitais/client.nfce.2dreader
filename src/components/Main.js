@@ -132,7 +132,7 @@ class Main extends Component {
         return (
             <div id="main">
                 {this.state.session.token != null && (
-                    <Basic user={this.state.session.user} logout={this.logout} />
+                    <Basic config={this.props.config} user={this.state.session.user} logout={this.logout} />
                 )}
 
                 {this.state.session.token == null && (
@@ -144,7 +144,7 @@ class Main extends Component {
                         )}
 
                         {!this.state.loading && (
-                            <Login login={(form) => this.login(form)} callback={this.state.loginError} />
+                            <Login config={this.props.config} login={(form) => this.login(form)} callback={this.state.loginError} />
                         )}
                     </div>
                 )}

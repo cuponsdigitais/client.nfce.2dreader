@@ -1,16 +1,15 @@
 import React from 'react'
 import { Card, Row, Button, Input } from 'react-materialize'
-import config from '../../config/'
 
 let form = {
     name: '', phone: '', address: '', district: '', city: ''
 }
 
 const _change = (e) => {
-    form[e.target.id] = e.target.value
+    form[e.target.id] = e.target.value.toUpperCase()
 }
 
-const Register = ({ cpfFull, onClickRegister, onClickCancel }) => {
+const Register = ({ cpfFull, onClickRegister, onClickCancel, config }) => {
 
     const _onClickRegister = () => {
         onClickRegister(form)

@@ -7,9 +7,9 @@ import config from './config/index'
 
 import Main from './components/Main';
 
-document.title = config.app.title
+document.title = config.atacarejo3irmaos.app.title
 
-firebase.initializeApp(config.firebase);
+firebase.initializeApp(config.atacarejo3irmaos.firebase);
 
-ReactDOM.render(<Main />, document.getElementById('root'));
+ReactDOM.render(<Main config={config.atacarejo3irmaos} />, document.getElementById('root'));
 registerServiceWorker();

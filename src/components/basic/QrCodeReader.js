@@ -2,11 +2,9 @@ import React from 'react'
 import { Card, Row, Col, Button, Input } from 'react-materialize'
 import QRCode from 'qrcode.react'
 
-import config from '../../config/'
-
 const QrCodeReader = ({ 
     clientName, clientInformation, cpfFull, qrCodeNfceReader, 
-    onChangeText, onClickRead, onClickPrintCoupom, onClickCancel, callbackRead,
+    onChangeText, onClickRead, onClickPrintCoupom, onClickCancel, callbackRead, config
 }) => {
 
     console.log(clientInformation)
@@ -42,30 +40,60 @@ const QrCodeReader = ({
                     </Row>
                 </Col>
             </Row>
-            <Row>
-                {/* Row 2 > render informacoes */}
-                <ul>
-                    <li>
-                        Valor Total Acumulado: R$ {totalAccumulated}
-                        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Cupons Resgatados: {totalCoupons}
-                    </li>
-                    <li className="divider"></li>
-                    <li>
-                        Saldo Acumulado: R$ {currentFormatedBalance}&nbsp;
-                        {currentBalance > 50 && (
-                            <em>({currentCoupons} cupo{currentCoupons == 1 ? 'm' : 'ns'} disponíve{currentCoupons == 1 ? 'l' : 'is'})</em>
-                        )}
-                    </li>
 
-                    {currentBalance > 50 && (
+            {/* Row 2 > render informacoes */}
+
+            {config.app.accumulated && (
+                <Row>
+                    <ul>
                         <li>
-                            <button className={config.app.primaryColor + ' btn waves-effect waves-light col s12'} type="button" 
-                                onClick={() => onClickPrintCoupom()}>Resgatar Cupom</button>
+                            Valor Total Acumulado: R$ {totalAccumulated}
+                            &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Cupons Resgatados: {totalCoupons}
                         </li>
-                    )}
+                        <li className="divider"></li>
+                        <li>
+                            Saldo Acumulado: R$ {currentFormatedBalance}&nbsp;
+                            {currentBalance > 50 && (
+                                <em>({currentCoupons} cupo{currentCoupons == 1 ? 'm' : 'ns'} disponíve{currentCoupons == 1 ? 'l' : 'is'})</em>
+                            )}
+                        </li>
 
-                </ul>
-            </Row>
+                        {currentBalance > 50 && (
+                            <li>
+                                <button className={config.app.primaryColor + ' btn waves-effect waves-light col s12'} type="button" 
+                                    onClick={() => onClickPrintCoupom()}>Resgatar Cupom</button>
+                            </li>
+                        )}
+
+                    </ul>
+                </Row>
+            )}
+
+            {/* {!this.props.config.app.accumulated && (
+                <Row>
+                    <ul>
+                        <li>
+                            Valor Total Acumulado: R$ {totalAccumulated}
+                            &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Cupons Resgatados: {totalCoupons}
+                        </li>
+                        <li className="divider"></li>
+                        <li>
+                            Saldo Acumulado: R$ {currentFormatedBalance}&nbsp;
+                            {currentBalance > 50 && (
+                                <em>({currentCoupons} cupo{currentCoupons == 1 ? 'm' : 'ns'} disponíve{currentCoupons == 1 ? 'l' : 'is'})</em>
+                            )}
+                        </li>
+
+                        {currentBalance > 50 && (
+                            <li>
+                                <button className={config.app.primaryColor + ' btn waves-effect waves-light col s12'} type="button"
+                                    onClick={() => onClickPrintCoupom()}>Resgatar Cupom</button>
+                            </li>
+                        )}
+
+                    </ul>
+                </Row>
+            )} */}
         </Card>
     )
 }
