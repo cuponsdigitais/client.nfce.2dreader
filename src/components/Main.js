@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-// import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 import { Card, Preloader } from 'react-materialize'
 
 import firebase from "firebase/app"
@@ -10,6 +10,8 @@ import moment from 'moment'
 
 import Login from './Login'
 import Basic from './basic/index'
+import Admin from './Admin/index'
+import AtualizaRegistros from './Admin/AtualizaRegistros'
 
 class Main extends Component {
 
@@ -87,8 +89,6 @@ class Main extends Component {
     }
 
     login(form) {
-        // console.log(form)
-
         firebase.auth().signInWithEmailAndPassword(form.data.email, form.data.password)
             .then(response => {
                 firebase.database().ref(`users/${response.user.uid}`).once('value')
@@ -105,23 +105,24 @@ class Main extends Component {
             .catch(function (error) {
                 console.log(error)
             });
-
-
-
-        // var user = firebase.auth().currentUser
-
-        // if (user) {
-        //     this.showToast('usuario logado')
-        // } else {
-        //     this.showToast('ainda nao logado')
-        // }
     }
 
     render() {
         return (
             <div id="main">
                 {this.state.session.token != null && (
-                    <Basic config={this.props.config} user={this.state.session.user} logout={this.logout} />
+                    <Router>
+                        <Switch>
+                            <Route exact path='/'>
+                                <Basic config={this.props.config} user={this.state.session.user} logout={this.logout} />
+                            </Route>
+                            {this.state.session.user.access.admin.dashboard.read && (
+                                <Route path='/admin'>
+                                    <Admin config={this.props.config} user={this.state.session.user} logout={this.logout} />
+                                </Route>
+                            )}
+                        </Switch>
+                    </Router>
                 )}
 
                 {this.state.session.token == null && (

@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
 import { Row, Col, Button, Card, Preloader } from 'react-materialize'
 import firebase from "firebase/app"
-import 'firebase/database'
 
-import axios from 'axios'
+import { Link } from 'react-router-dom'
+
+import 'firebase/database'
 
 import '../../assets/styles.css'
 
@@ -61,7 +62,7 @@ export default class Basic extends Component {
 
             snapshot.forEach((s) => { snap[i++] = s.val() });
 
-            this.setState({ items: snap, loading: false })
+            this.setState({ items: snap, itemsObj: snapshot.val(), loading: false })
         });
     }
 
@@ -337,7 +338,22 @@ export default class Basic extends Component {
             user: this.state.user.uuid
         }
 
+        let count = this.state.session.client.reprint ? this.state.session.client.reprint + 1 : 1
+        let countItem = item.reprint ? item.reprint + 1 : 1
+
+        this.setState({
+            session: {
+                ...this.state.session,
+                client: {
+                    ...this.state.session.client,
+                    reprint: count
+                }
+            }
+        })
+
         // gravar no firebase
+        this.database.ref().child(`clients/${this.state.session.cpfNumber}/reprint`).set(count)
+        this.database.ref().child(`items/${item.id}/reprint`).set(countItem)
         this.database.ref().child("re-print").push(newRePrint)
 
         // start re-print
@@ -391,7 +407,7 @@ export default class Basic extends Component {
     }
 
     clientInformation() {
-        const { items, session } = this.state
+        const { items, session, itemsObj } = this.state
 
         if (this.props.config.app.accumulated) {
             let totalAccumulated = 0, currentBalance = 0, currentCoupons = 0, totalCoupons = session.client.coupons
@@ -413,7 +429,23 @@ export default class Basic extends Component {
                 currentCoupons
             }
         } else {
-            let temp = [], total = 0, count = 0, showInfo = false
+            let temp = [],
+                tempObj = [],
+             total = 0, count = 0, showInfo = false
+
+            for (let iObj of Object.keys(itemsObj)) {
+                
+                if (itemsObj[iObj].clientId === session.cpfNumber){
+
+                    let newItem = itemsObj[iObj]
+                    
+                    newItem.id = iObj
+
+                    tempObj.push(newItem)
+                }
+            }
+
+            console.log(tempObj)
 
             for (let i of items) {
                 if (session.cpfNumber === '08761042439') {
@@ -427,7 +459,7 @@ export default class Basic extends Component {
 
             return {
                 showInfo,
-                items: temp,
+                items: tempObj,
                 count,
                 currentBalance: total.toFixed(2),
                 currentFormatedBalance: total.toFixed(2).replace(".", ","),
@@ -462,6 +494,7 @@ export default class Basic extends Component {
 
                         {isValidCpf && !isModeRegister && isLoadClient && (
                             <QrCodeReader config={this.props.config} 
+                                client={client}
                                 clientName={client.name} cpfFull={cpfFull} qrCodeNfceReader={qrCodeNfceReader}
                                 clientInformation={this.clientInformation()}
 
@@ -478,9 +511,11 @@ export default class Basic extends Component {
 
                 <Button floating fab='vertical' icon='menu' className={this.props.config.app.primaryColor} large style={{ bottom: '45px', right: '24px' }}>
                     {this.state.user.access.admin.dashboard.read && (
-                        <Button floating icon='dashboard' className='blue' />
+                        <Link to='/admin'>
+                            <Button floating icon='dashboard' className='blue' />
+                        </Link>
                     )}
-                    
+
                     <Button floating icon='exit_to_app' className='red' onClick={() => this.props.logout()} />
                 </Button>
             </Row>

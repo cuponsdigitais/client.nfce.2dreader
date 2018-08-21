@@ -8,9 +8,11 @@ import config from './config/index'
 
 import Main from './components/Main';
 
-document.title = config.atacarejo3irmaos.app.title
+const configuration = config.nobre
 
-firebase.initializeApp(config.atacarejo3irmaos.firebase);
+document.title = configuration.app.title
 
-ReactDOM.render(<Main config={config.atacarejo3irmaos} />, document.getElementById('root'));
+firebase.initializeApp(configuration.firebase);
+
+ReactDOM.render(<Main config={configuration} />, document.getElementById('root'));
 registerServiceWorker();

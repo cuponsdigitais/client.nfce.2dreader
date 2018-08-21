@@ -9,11 +9,12 @@
     "moment": "^2.22.2",
     "qrcode.react": "^0.8.0",
     "react": "^16.3.2",
-    "react-chartjs-2": "^2.7.2",
+    "react-chartjs-2": "^2.7.4",
     "react-dom": "^16.3.2",
     "react-input-mask": "^1.2.2",
     "react-materialize": "^2.2.1",
     "react-qr-reader": "^2.1.0",
+    "react-router-dom": "^4.3.1",
     "react-scripts": "1.1.4"
   },
   "scripts": {

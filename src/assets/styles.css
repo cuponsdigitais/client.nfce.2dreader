@@ -13,6 +13,17 @@ body {
     align-items: center;
 }
 
+#clientInfoNotAccumulated {
+    overflow: auto;
+    height: 125px
+}
+
 .button-collapse{
     color: black
+}
+
+.rowRanking {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ebebeb
 }

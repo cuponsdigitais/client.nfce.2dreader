@@ -3,39 +3,54 @@ import { Card, Row, Col, Button, Input, Modal } from 'react-materialize'
 import QRCode from 'qrcode.react'
 
 const QrCodeReader = ({ 
-    clientName, clientInformation, cpfFull, qrCodeNfceReader, onSearchSefaz,
+    clientName, clientInformation, cpfFull, qrCodeNfceReader, onSearchSefaz, client,
     onChangeText, onClickRead, onClickPrintCoupom, onRePrintCoupon, onClickCancel, callbackRead, config
 }) => {
 
-    let form = {
-        justify: ''
-    }
+    let form = { }
 
     // console.log(clientInformation)
 
     const { totalAccumulated, totalCoupons, currentBalance, currentFormatedBalance, currentCoupons } = clientInformation
 
     const _onJustify = (event) => {
-        form.justify = event.target.value
+        form[event.target.id] = event.target.value
     }
 
-    const _onClick = (item) => {
-        console.log(form)
+    const _onAccessCheck = (index) => {
+        let validate = false, field = `permission-${index}`
 
-        let validate = false
+        if (form[field] == '3irm@0s') validate = true
 
-        if (form.justify === '') validate = true
+        if (validate) {
+            window.$(`#modal-permission-${index}`).modal('close')
+            window.$(`#modal-justify-${index}`).modal('open')
+        } else showToast('A senha está errada, por favor tente novamente!')
+
+        window.$(`#${field}`).val('').parent().find('label').removeClass('active')
+    }
+
+    const _change = (event) => {
+        //
+    }
+
+
+
+    const _onClick = (index, item) => {
+        let validate = false, field = `justify-${index}`
+
+        if (form[field] === '') validate = true
 
         if (!validate) {
-            item.justify = form.justify
+            item.justify = form[field]
             showToast('Iniciando Re-impressão!')
 
             onRePrintCoupon(item)
-            window.$('#modal-justify').modal('close')
-            window.$('#justify').val('').parent().find('label').removeClass('active')
-        } else {
-            showToast('Existem campos que precisam ser preenchidos')
-        }
+
+            window.$(`#modal-justify-${index}`).modal('close')
+        } else showToast('Existem campos que precisam ser preenchidos')
+
+        window.$(`#${field}`).val('').parent().find('label').removeClass('active')
     }
 
     const showToast = (message) => {
@@ -62,17 +77,40 @@ const QrCodeReader = ({
                             onChange={(text) => onChangeText(text)} 
                             label="Cupom NFCe" autoFocus={true} />
 
-                        <Button waves='light' className={config.app.secondaryColor + ' col s12'}
+                        <Button waves='light' className={config.app.secondaryColor + ' col s6'}
                             onClick={() => {
-                                onClickRead()
-                                document.getElementById('qrCode').focus()
-                            }}> Verificar Cupom </Button>
+                                onClickRead(); document.getElementById('qrCode').focus() }}>Verificar Cupom</Button>
 
-                        <Button waves='light' style={{ marginTop: 15 }} className={config.app.primaryColor + ' col s12'}
-                            onClick={() => onSearchSefaz()}> Buscar Chave de Acesso </Button>
+                        <Button waves='light' className={config.app.primaryColor + ' col s6'}
+                            onClick={() => onSearchSefaz()}>Buscar Chave de Acesso </Button>
+
+                        <Button waves='light' style={{ marginTop: 15 }}  className={config.app.primaryColor + ' col s12'}
+                            onClick={() => window.$('#modal-crud').modal('open')}>Ver cadastro</Button>
 
                         <Button waves='light' style={{ marginTop: 15 }} className={config.app.cancelColor + ' col s12'}
-                            onClick={() => onClickCancel()}> Digitar novo CPF </Button>
+                            onClick={() => onClickCancel()}>Digitar novo CPF</Button>
+
+                        <Modal
+                            id={`modal-crud`} header='Editar Cadastro'
+                            actions={
+                                <div>
+                                    <button type="button"
+                                        className={config.app.secondaryColor + ' btn waves-effect waves-light'}
+                                        onClick={() => window.$(`#modal-crud`).modal('close')}>Cancelar</button>
+                                    <button type="button"
+                                        className={config.app.primaryColor + ' btn waves-effect waves-light'}
+                                        >Confirmar</button>
+                                </div>
+                            }>
+                            <Row>
+                                <Input s={4} label="CPF" defaultValue={cpfFull} disabled />
+                                <Input s={8} id='name' defaultValue={client.name} onChange={_change} label="Nome" />
+                                <Input s={12} id='address' defaultValue={client.address} onChange={_change} label="Endereço" />
+                                <Input s={4} id='district' defaultValue={client.district} onChange={_change} label="Bairro" />
+                                <Input s={4} id='city' defaultValue={client.city} onChange={_change} label="Cidade" />
+                                <Input s={4} id='phone' defaultValue={client.phone} onChange={_change} label="Telefone para Contato" />
+                            </Row>
+                        </Modal>
                     </Row>
                 </Col>
             </Row>
@@ -100,7 +138,6 @@ const QrCodeReader = ({
                                     onClick={() => onClickPrintCoupom()}>Resgatar Cupom</button>
                             </li>
                         )}
-
                     </ul>
                 </Row>
             )}
@@ -116,47 +153,73 @@ const QrCodeReader = ({
                     <table>
                         <thead>
                             <tr>
-                                <th>Chave de Acesso</th>
-                                <th>Valor</th>
-                                <th></th>
+                                <th style={{ width: '50%' }}>Chave de Acesso</th>
+                                <th style={{ width: '15%' }}>Valor</th>
+                                <th className="center-align" style={{ width: '15%' }}>Re-impressões</th>
+                                <th style={{ width: '20%' }}></th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {clientInformation.items.map((item, index) => {
-                                return (
-                                    <tr key={index}>
-                                        <td>{item.key}</td>
-                                        <td>R$ {item.value}</td>
-                                        <td>
-                                            <Modal
-                                                id='modal-justify'
-                                                header='Justifique o motivo da Re-impressão...'
-                                                trigger={
-                                                    <button type="button"
-                                                        className={config.app.primaryColor + ' btn waves-effect waves-light'}
-                                                    >Reimprimir</button>
-                                                }
-                                                actions={
-                                                    <div>
-                                                        <button type="button"
-                                                            className={config.app.secondaryColor + ' btn waves-effect waves-light'}
-                                                            onClick={() => {
-                                                                window.$('#modal-justify').modal('close')
-                                                                window.$('#justify').val('').parent().find('label').removeClass('active')
-                                                            }}>Cancelar</button>
-                                                        <button type="button"
-                                                            className={config.app.primaryColor + ' btn waves-effect waves-light'}
-                                                            onClick={() => _onClick(item)}>Confirmar</button>
-                                                    </div>
-                                                }>
-                                                <Input s={12} id="justify" onChange={(text) => _onJustify(text)} label="Justificativa" />
-                                            </Modal>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
                     </table>
+                    <div id="clientInfoNotAccumulated">
+                        <table className="highlight">
+                            <tbody>
+                                {clientInformation.items.map((item, index) => {
+                                    return (
+                                        <tr key={index}>
+                                            <td style={{ width: '50%' }}>{item.key}</td>
+                                            <td style={{ width: '15%' }}>R$ {item.value}</td>
+                                            <td className="center-align" style={{ width: '15%' }}>{item.reprint ? item.reprint : 0}</td>
+                                            <td style={{ width: '20%' }}>
+                                                <button type="button" onClick={() => {
+                                                    form[`permission-${index}`] = ''
+                                                    form[`justify-${index}`] = ''
+
+                                                    window.$(`#permission-${index}`).val('').parent().find('label').removeClass('active')
+                                                    window.$(`#justify-${index}`).val('').parent().find('label').removeClass('active')
+
+                                                    window.$(`#modal-permission-${index}`).modal('open')
+                                                }} className={config.app.primaryColor + ' btn waves-effect waves-light'}>Reimprimir</button>
+                                                <Modal
+                                                    id={`modal-permission-${index}`} header='Acesso restrito' bottomSheet
+                                                    actions={
+                                                        <div>
+                                                            <button type="button"
+                                                                className={config.app.secondaryColor + ' btn waves-effect waves-light'}
+                                                                onClick={() => window.$(`#modal-permission-${index}`).modal('close')}>Cancelar</button>
+                                                            <button type="button"
+                                                                className={config.app.primaryColor + ' btn waves-effect waves-light'}
+                                                                onClick={() => _onAccessCheck(index)}>Confirmar</button>
+                                                        </div>
+                                                    }>
+                                                    <Input s={12} id={`permission-${index}`} type="password" onChange={(text) => _onJustify(text)} label="Senha" />
+                                                </Modal>
+                                                <Modal
+                                                    id={`modal-justify-${index}`} header='Justifique o motivo da Re-impressão...'
+                                                    actions={
+                                                        <div>
+                                                            <button type="button"
+                                                                className={config.app.secondaryColor + ' btn waves-effect waves-light'}
+                                                                onClick={() => window.$(`#modal-justify-${index}`).modal('close')}>Cancelar</button>
+                                                            <button type="button"
+                                                                className={config.app.primaryColor + ' btn waves-effect waves-light'}
+                                                                onClick={() => _onClick(index, item)}>Confirmar</button>
+                                                        </div>
+                                                    }>
+                                                    <Row>
+                                                        <div>Chave: {item.key}</div>
+                                                        <div>Valor: R$ {item.value}</div>
+                                                        <div>Re-impressões: {item.reprint ? item.reprint : 0}</div>
+                                                        <div>&nbsp;</div>
+                                                        <Input s={12} id={`justify-${index}`} onChange={(text) => _onJustify(text)} label="Justificativa" />
+                                                    </Row>
+                                                </Modal>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </Row>
             )}
         </Card>
